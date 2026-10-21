@@ -1,0 +1,65 @@
+# gedcomwright pipeline config. Copy this file to config.yaml (gitignored)
+# and fill in your own values. See BRIEF.md for what each stage does with
+# these values.
+
+paths:
+  # Keep the GEDCOM outside the repo (BRIEF.md Hard Rule 7: never commit
+  # it). Point at the folder and take the newest *.ged, rather than a fixed
+  # filename, since FTM's export filename is dated.
+  gedcom_dir: "C:/path/to/gedcom-exports"
+  media_dir: "C:/Users/you/Documents/Family Tree Maker/My Family Tree Media"
+  build_dir: "build"           # gitignored: build/data (JSON) + build/site (HTML) + build/reports
+  overrides_dir: "overrides"
+
+site:
+  title: "My Family Tree"
+  # base_path matters for render (Stage 3) and publish (Stage 5): if the
+  # site is a subpath of a shared docroot rather than its own vhost, every
+  # internal link/sitemap/canonical URL needs to be base_path-aware.
+  # Use "" for a site at the domain root.
+  domain: "example.com"
+  base_path: "/family"
+  contact_email: "you@example.com"
+
+privacy:
+  home_person: "@I1@"          # GEDCOM xref of the person the tree is centred on
+  min_generation: 2
+  event_years: 100
+  child_years: 100
+  parent_years: 175
+  sibling_years: 130
+  recent_years: 100
+  recent_child_years: 85
+  # BRIEF.md: "Living people... In listings they appear as 'Living
+  # [Surname]'... config can omit them instead." true = show the
+  # placeholder; false = omit hidden relatives from listings entirely.
+  show_living_placeholder: true
+
+facts:
+  suppress: ["Race"]
+
+# gedcomwright lint thresholds (BRIEF.md "Tree lint": report only, never
+# auto-fixed; "Configurable thresholds").
+lint:
+  min_parent_age: 12   # child born before a parent was this old
+  max_mother_age: 55   # child born after the mother was this old
+  min_marriage_age: 14
+
+# gedcomwright media (Stage 2). BRIEF.md: "All thresholds are configurable.
+# Tune them against the real scans."
+media:
+  thumbnail_width: 400
+  display_width: 2048
+  srcset_widths: [640, 1024, 1536, 2048]
+  photo_zoom_max_width: 3500
+  document_dzi_min_long_edge: 4000
+  dzi_tile_size: 510
+  pdf_render_dpi: 200
+  publish_original_pdf: false   # BRIEF.md: "Publish the original PDF only
+                                 # if config allows it" - off by default,
+                                 # per Hard Rule 2 (originals never published)
+  webp_quality: 82
+  # No media.category_tag setting: GEDCOM 5.5.1 has no standard media-
+  # category tag, and two full inspections of real FTM exports found no
+  # custom one either - FTM's in-app media categories apparently never
+  # reach the GEDCOM at all.

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo.title }}{% endblock %}
+{% block description %}{{ seo.description }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endblock %}
+
+{% block content %}
+<article class="listing-page prose wrap">
+  <header class="page-hero">
+    <p class="eyebrow">About</p>
+    <h1>About this site</h1>
+  </header>
+
+  <p>This is a public record of the {{ site.title }} lines, maintained in Family
+    Tree Maker and published here as a plain, self-contained site - no tracking,
+    no third-party services, nothing but the records themselves.</p>
+
+  <p>Documents, photographs and sources are shown alongside each person where
+    they exist, grouped by where they came from, so you can see exactly what
+    a fact is based on rather than taking it on faith.</p>
+
+  <h2>About the people shown here</h2>
+  <p>Only people who have died are published, and only once the tree records
+    that - a death, burial or similar fact with a date, or old enough
+    ancestry/descent to make it certain. Anyone who may still be living is
+    left out entirely: no page, no facts, no photos. Where a living person
+    would otherwise appear in a family listing - as someone's parent, spouse
+    or child - they're shown only as "Living [Surname]", with no link and
+    nothing else about them.</p>
+
+  <h2>Get in touch</h2>
+  <p>If you think you're connected to this family, or you spot something
+    that should be corrected, I'd love to hear from you.</p>
+  <a class="button contact-link" href="#"
+     data-user="{{ site.contact_email.split('@')[0] }}"
+     data-domain="{{ site.contact_email.split('@')[1] }}"
+     data-subject="Family history enquiry">Get in touch</a>
+  <noscript><p class="obfuscated-email">{{ site.contact_email.split('@')[0] }} [at] {{ site.contact_email.split('@')[1] }}</p></noscript>
+</article>
+{% endblock %}

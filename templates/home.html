@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo.title }}{% endblock %}
+{% block description %}{{ seo.description }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endblock %}
+
+{% block content %}
+<article class="home wrap">
+  <header class="home-hero">
+    <p class="eyebrow">Family history</p>
+    <h1>{{ site.title }}</h1>
+    <p class="home-intro">{{ intro }}</p>
+
+    <div class="search-box">
+      <pagefind-searchbox placeholder="Search for an ancestor&#8217;s name&hellip;"></pagefind-searchbox>
+    </div>
+  </header>
+
+  <section class="register" aria-labelledby="featured-h">
+    <h2 id="featured-h">Featured surnames</h2>
+    <ul class="surname-list">
+      {% for g in featured %}
+      <li>
+        <a href="{{ root }}surnames/{{ g.key }}/">{{ g.label }}</a>
+        <span class="surname-count">{{ g.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="browse-all"><a href="{{ root }}surnames/">Browse all {{ total_surnames }} surnames &rarr;</a></p>
+  </section>
+
+  <section class="contact-cta">
+    <p>Think you might be related? I'd love to hear from you.</p>
+    <a class="button contact-link" href="#"
+       data-user="{{ site.contact_email.split('@')[0] }}"
+       data-domain="{{ site.contact_email.split('@')[1] }}"
+       data-subject="Family history enquiry">Get in touch</a>
+    <noscript><p class="obfuscated-email">{{ site.contact_email.split('@')[0] }} [at] {{ site.contact_email.split('@')[1] }}</p></noscript>
+  </section>
+</article>
+{% endblock %}

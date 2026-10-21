@@ -1,0 +1,473 @@
+/* gedcomwright - person page design proposal
+   Design direction: an archival record, not a product page - grounded in
+   parish registers, census sheets and ledger-keeping rather than a generic
+   "warm cream + serif + terracotta" template. See README.md for the full
+   token rationale. */
+
+/* ---------- tokens ---------- */
+:root {
+  --paper: #f2f0e8;
+  --paper-raised: #fbfaf5;
+  --ink: #23241f;
+  /* Two text tiers only, not three - a third "faint" grey measured out at
+     ~3.1:1 against the paper background in both modes, failing WCAG AA's
+     4.5:1 for normal-size text (checked by computing relative luminance;
+     see README.md). --ink-soft alone passes comfortably (~5.9:1 light,
+     ~6.3:1 dark) and is used everywhere that faint tier would have been -
+     eyebrow labels, section headers, the living-relative placeholder. */
+  --ink-soft: #5b5b50;
+  --accent: #3c5a48;
+  --accent-strong: #2b4434;
+  --accent-warm: #9c7a3c;
+  --line: #d9d4c5;
+  --line-strong: #c3bca5;
+  --shadow: 0 1px 2px rgba(35, 36, 31, 0.06), 0 4px 16px rgba(35, 36, 31, 0.06);
+
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --measure: 42rem;
+  --wrap: 72rem;
+  --radius: 3px;
+
+  /* Pagefind's Component UI resets its own subtree (`all: initial`) and
+     themes entirely through these custom properties - mapped onto our own
+     tokens so the search modal doesn't look like a bolted-on widget.
+     --pf-primary is a guess at an accent-color hook, not confirmed against
+     Pagefind's full variable list; harmless if it doesn't exist (an
+     unrecognized custom property is simply ignored), worth double-checking
+     against the rendered modal. */
+  --pf-text: var(--ink);
+  --pf-background: var(--paper-raised);
+  --pf-border: var(--line-strong);
+  --pf-border-radius: var(--radius);
+  --pf-font: var(--font-body);
+  --pf-primary: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* :not([data-theme="light"]) lets the manual toggle below override a
+     dark system preference - without it, this block would always win. */
+  :root:not([data-theme="light"]) {
+    --paper: #1a1b17;
+    --paper-raised: #222319;
+    --ink: #e8e4d8;
+    --ink-soft: #a6a08c;
+    --accent: #7fa78c;
+    --accent-strong: #9bc2a8;
+    --accent-warm: #c9a456;
+    --line: #35362e;
+    --line-strong: #454638;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 20px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* the manual toggle (static/js/theme.js): same dark tokens, applied
+   unconditionally so dark mode works even when the OS prefers light. */
+:root[data-theme="dark"] {
+  --paper: #1a1b17;
+  --paper-raised: #222319;
+  --ink: #e8e4d8;
+  --ink-soft: #a6a08c;
+  --accent: #7fa78c;
+  --accent-strong: #9bc2a8;
+  --accent-warm: #c9a456;
+  --line: #35362e;
+  --line-strong: #454638;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* ---------- theme toggle ---------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.theme-toggle svg { width: 1.1rem; height: 1.1rem; display: block; }
+.theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; margin: 0; }
+p { margin: 0 0 1em; }
+ul, ol, dl { margin: 0; padding: 0; list-style: none; }
+dd { margin: 0; }
+details > summary { cursor: pointer; }
+
+.wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: 1.25rem; }
+
+.skip-link {
+  position: absolute; left: -999px; top: 0; z-index: 100;
+  background: var(--accent); color: var(--paper-raised);
+  padding: 0.75rem 1.25rem; border-radius: var(--radius);
+}
+.skip-link:focus { left: 1rem; top: 1rem; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- header / footer ---------- */
+.site-header {
+  border-bottom: 1px solid var(--line);
+  padding-block: 1rem;
+}
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.site-mark {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.125rem;
+  text-decoration: none; letter-spacing: 0.01em;
+}
+.site-header nav { display: flex; align-items: center; gap: 1.5rem; font-size: 0.9375rem; }
+.site-header nav a { text-decoration: none; color: var(--ink-soft); }
+.site-header nav a:hover { color: var(--accent); }
+.site-header pagefind-modal-trigger { display: inline-block; }
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  padding-block: 1.5rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.obfuscated-email { font-family: var(--font-mono); font-size: 0.85em; }
+.placeholder-flag {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent-warm);
+}
+.site-credit {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- hero ----------
+   Kept deliberately short (Will's feedback, 9 Oct 2026: "more info above
+   the fold... something more inline with the ancestry or familysearch
+   interface") - name, the signature lifespan device, and place only.
+   Portrait/vitals/family move into .vitals-block right below, so a
+   reader reaches the substance without scrolling past empty hero space. */
+.person-hero { padding-block: 1rem 0.4rem; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.5rem;
+}
+.person-hero h1 {
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+  letter-spacing: -0.01em;
+}
+
+/* the signature device: a life, shown as the span between two years */
+.lifespan {
+  display: flex; align-items: center; gap: 1rem;
+  margin-block: 0.5rem 0.3rem;
+  max-width: 24rem;
+}
+.lifespan-year {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 1.25rem; font-weight: 500; color: var(--accent-strong);
+}
+.lifespan-rule {
+  flex: 1; height: 1px; background: var(--line-strong);
+  position: relative;
+}
+.lifespan-rule::before {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 6px; height: 6px; transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--accent);
+}
+.place {
+  font-family: var(--font-display); font-style: italic;
+  color: var(--ink-soft); font-size: 1.05rem;
+  margin-bottom: 0; /* kill the base p{margin-bottom:1em} - a stray gap
+                        right where the vitals block should start */
+}
+
+/* ---------- vitals block: portrait + Born/Died/Buried + Family, all
+   above the fold, in one row on desktop and stacked on mobile. Tighter
+   line-height than body prose (1.6 is tuned for paragraphs, not compact
+   data rows) - Will's feedback, 9 Oct 2026: "tightened up considerably...
+   a lot of whitespace". ---------- */
+.vitals-block {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 1.5rem;
+  padding-block: 0 1.25rem;
+  align-items: start;
+  line-height: 1.4;
+}
+.vitals-block.no-portrait { grid-template-columns: 1fr 1fr; }
+.vitals-col-label {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.6rem;
+}
+.vitals-portrait { display: flex; }
+.hero-portrait {
+  flex: none; width: 128px; height: 128px; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); display: block;
+}
+.hero-portrait img { width: 100%; height: 100%; object-fit: cover; }
+
+.relation-summary { margin-bottom: 0.6rem; }
+.relation-summary li {
+  font-family: var(--font-display); font-size: 1.1rem;
+  padding-block: 0.1rem; color: var(--ink);
+}
+
+.vitals-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.vital-row { display: flex; gap: 0.75rem; align-items: baseline; }
+.vital-row dt {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft); min-width: 4.5rem;
+}
+.vital-row dd { font-weight: 600; }
+.vital-place { font-weight: 400; color: var(--ink-soft); }
+
+.vitals-family .family-grid { display: flex; flex-direction: column; gap: 0.7rem; }
+.vitals-family .family-row dt {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.15rem;
+}
+
+/* ---------- register sections (Events / Family / Media / Sources) ----------
+   Padding here compounds at every section boundary (one section's bottom
+   padding plus the next one's top, since border-top doesn't collapse
+   margins/padding) - the single biggest source of the page reading as too
+   loose. Trimmed accordingly (Will's feedback, 9 Oct 2026). ---------- */
+.register {
+  max-width: var(--wrap); margin: 0 auto; padding: 1.25rem 1.25rem;
+  border-top: 1px solid var(--line);
+  line-height: 1.4;
+}
+.register h2 {
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft);
+  margin-bottom: 0.75rem;
+}
+
+/* Events */
+.events { max-width: var(--wrap); }
+.event {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; align-items: baseline;
+  padding-block: 0.4rem;
+  border-bottom: 1px dotted var(--line);
+}
+.event:last-child { border-bottom: none; }
+.event-label { font-weight: 600; min-width: 11rem; }
+.event-place { color: var(--ink-soft); flex: 1; }
+.event-citecount {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-soft);
+  margin-left: auto;
+}
+
+/* Family */
+.family-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+.family-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.family-row dt {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-soft); min-width: 6rem; padding-top: 0.2rem;
+}
+.family-row dd a { text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.family-row dd a:hover { border-color: var(--accent); color: var(--accent); }
+.living { color: var(--ink-soft); font-style: italic; }
+
+/* Media gallery */
+.gallery {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.gallery-item {
+  position: relative; aspect-ratio: 1; border-radius: var(--radius);
+  overflow: hidden; display: block; background: var(--paper-raised);
+  box-shadow: var(--shadow);
+}
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-item:hover img { filter: brightness(1.04); }
+.doc-badge {
+  position: absolute; bottom: 0.4rem; left: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.06em;
+  text-transform: uppercase; background: rgba(35, 36, 31, 0.72); color: #f2f0e8;
+  padding: 0.15rem 0.4rem; border-radius: 2px;
+}
+
+/* Sources */
+.source-group {
+  border-bottom: 1px solid var(--line);
+  padding-block: 0.85rem;
+}
+.source-group summary {
+  font-weight: 600; list-style: none;
+}
+.source-group summary::-webkit-details-marker { display: none; }
+.source-group summary::before {
+  content: "\25B8"; display: inline-block; margin-right: 0.5rem;
+  color: var(--accent); transition: transform 0.15s ease;
+}
+.source-group[open] summary::before { transform: rotate(90deg); }
+.source-author { font-weight: 400; color: var(--ink-soft); }
+.citations { margin-top: 0.6rem; padding-left: 1.4rem; }
+.citations li {
+  font-size: 0.92rem; color: var(--ink-soft); padding-block: 0.2rem;
+  display: flex; gap: 0.6rem; flex-wrap: wrap;
+}
+.citation-fact { font-weight: 600; color: var(--ink); }
+.citation-page { font-family: var(--font-mono); font-size: 0.82rem; }
+.citation-link { color: var(--accent); }
+.other-researchers summary { color: var(--ink-soft); }
+.source-caveat { font-size: 0.82rem; font-weight: 400; color: var(--ink-soft); }
+.source-group-title { font-size: 0.9rem; font-weight: 600; margin: 0.6rem 0 0.2rem 1.4rem; }
+
+/* Contact CTA */
+.contact-cta {
+  text-align: center; padding-block: 2rem;
+  border-top: 1px solid var(--line);
+}
+.contact-cta p { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 1.25rem; }
+.button, .contact-cta .button {
+  display: inline-block; font-family: var(--font-body); font-weight: 600;
+  background: var(--accent); color: var(--paper-raised);
+  padding: 0.7rem 1.6rem; border-radius: var(--radius);
+  text-decoration: none; transition: background 0.15s ease;
+}
+.button:hover { background: var(--accent-strong); }
+.footer .contact-link, .site-footer .contact-link { color: var(--accent); text-decoration: underline; }
+
+/* ---------- document viewer (dialog) ---------- */
+#document-viewer {
+  width: min(92vw, 70rem); height: min(88vh, 50rem); padding: 0;
+  border: none; border-radius: var(--radius); background: var(--ink);
+  color: var(--paper);
+}
+#document-viewer::backdrop { background: rgba(10, 10, 8, 0.75); }
+.viewer-chrome {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 1rem; font-size: 0.9rem;
+}
+.viewer-close {
+  background: none; border: none; color: inherit; font-size: 1.5rem;
+  line-height: 1; cursor: pointer; padding: 0.25rem 0.5rem;
+}
+#osd-container { width: 100%; height: calc(100% - 2.75rem); background: #111; }
+
+/* ---------- listing pages (surname index, a surname, and later home) ---------- */
+.listing-page { padding-block: 1.25rem 3rem; }
+.page-hero {
+  padding-block: 0.5rem 1rem; border-bottom: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+.page-hero h1 { font-size: clamp(1.75rem, 4.5vw, 2.5rem); letter-spacing: -0.01em; }
+.page-intro { color: var(--ink-soft); margin: 0.4rem 0 0; }
+.page-hero .eyebrow a { color: inherit; text-decoration: none; }
+.page-hero .eyebrow a:hover { color: var(--accent); }
+
+.surname-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.1rem 1.5rem;
+}
+.surname-list li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
+  padding-block: 0.35rem; border-bottom: 1px dotted var(--line);
+}
+.surname-list a { text-decoration: none; font-weight: 600; }
+.surname-list a:hover { color: var(--accent); }
+.surname-count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-soft); }
+
+.person-list { display: flex; flex-direction: column; gap: 0; }
+.person-list li {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-block: 0.4rem; border-bottom: 1px dotted var(--line);
+}
+.person-list a { text-decoration: none; }
+.person-list a:hover { color: var(--accent); }
+.person-meta { display: flex; align-items: baseline; gap: 0.9rem; flex-shrink: 0; }
+.person-years { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-soft); }
+.person-sources { font-size: 0.82rem; color: var(--ink-soft); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- home page ---------- */
+.home-hero { padding-block: 2rem 1.5rem; }
+.home-hero h1 {
+  font-family: var(--font-display); font-size: clamp(2rem, 6vw, 3.25rem);
+  letter-spacing: -0.01em;
+}
+.home-intro {
+  font-size: 1.15rem; color: var(--ink-soft); max-width: var(--measure);
+  margin: 0.9rem 0 1.5rem;
+}
+.search-box { max-width: 28rem; }
+.browse-all { margin-top: 1rem; }
+.browse-all a { color: var(--accent); text-decoration: none; }
+.browse-all a:hover { text-decoration: underline; }
+
+/* ---------- long-form prose pages (About) ---------- */
+.prose { max-width: var(--measure); padding-block: 1.25rem 3rem; }
+.prose h2 {
+  font-size: 1.15rem; margin: 2rem 0 0.6rem;
+  letter-spacing: 0.02em;
+}
+.prose p { font-size: 1.02rem; }
+
+.error-page { padding-block: 3rem; }
+
+/* ---------- citation thumbnails (Sources section) ----------
+   Reuse the exact gallery-photo/gallery-document classes gallery.js
+   already wires up, so clicking one opens the same PhotoSwipe lightbox
+   or OpenSeadragon viewer as the Media gallery below - no new JS
+   (Will's feedback, 9 Oct 2026). */
+.citation-thumb {
+  display: inline-block; width: 2.5rem; height: 2.5rem;
+  border-radius: 2px; overflow: hidden; vertical-align: middle;
+  margin-right: 0.6rem; box-shadow: var(--shadow); flex: none;
+}
+.citation-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- responsive ---------- */
+@media (min-width: 640px) {
+  .event-label { min-width: 13rem; }
+}
+@media (max-width: 860px) {
+  .vitals-block, .vitals-block.no-portrait { grid-template-columns: 1fr 1fr; }
+  .vitals-portrait { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .vitals-block, .vitals-block.no-portrait { grid-template-columns: 1fr; }
+}

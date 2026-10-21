@@ -1,0 +1,17 @@
+# Pinned against Python 3.14.7.
+PyYAML==6.0.3
+pytest==8.4.2
+
+# Milestone 2 (media). pypdfium2 used instead of the brief's originally-named
+# PyMuPDF: PyMuPDF is AGPLv3-or-commercial-only; pypdfium2 (BSD-3/Apache-2.0,
+# wraps Google's PDFium) does the same job with no copyleft, confirmed
+# against a real PDF in the media folder (decided with Will, 9 Oct 2026).
+pyvips==3.2.0
+pyvips-binary==8.18.7
+pypdfium2==5.14.0
+
+# Milestone 3 (render).
+Jinja2==3.1.6
+pagefind[extended]==1.5.2
+# pagefind's Component UI (1.5+) replaces the old PagefindUI/pagefind-ui.js
+# default - confirmed against current docs, not assumed, 9 Oct 2026.

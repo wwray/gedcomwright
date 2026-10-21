@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo.title }}{% endblock %}
+{% block description %}{{ seo.description }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endblock %}
+
+{% block content %}
+<article class="listing-page wrap">
+  <header class="page-hero">
+    <p class="eyebrow"><a href="{{ root }}surnames/">&larr; All surnames</a></p>
+    <h1>{{ group.label }}</h1>
+    <p class="page-intro">{{ group.count }} {{ "person" if group.count == 1 else "people" }}</p>
+  </header>
+
+  <ol class="person-list">
+    {% for p in group.people %}
+    <li>
+      <a href="{{ root }}people/{{ p.slug }}/">{{ p.name.display }}</a>
+      <span class="person-meta">
+        {% if p.birth_year or p.death_year %}
+        <span class="person-years">{{ p.birth_year or "?" }}&ndash;{{ p.death_year or "?" }}</span>
+        {% endif %}
+        {% if p.source_count %}
+        <span class="person-sources">{{ p.source_count }} source{{ "s" if p.source_count != 1 }}</span>
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+</article>
+{% endblock %}

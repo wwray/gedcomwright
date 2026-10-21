@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo.title }}{% endblock %}
+{% block description %}{{ seo.description }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endblock %}
+{% block schema %}
+<script type="application/ld+json">{{ seo.schema_json|safe }}</script>
+{% endblock %}
+
+{% block content %}
+<article class="person">
+
+  <header class="person-hero wrap">
+    <p class="eyebrow">Person record</p>
+    <h1>{{ person.name.display }}</h1>
+    <div class="lifespan" role="img"
+         aria-label="Lived {% if person.birth_year %}{{ person.birth_year }}{% else %}unknown{% endif %} to {% if person.death_year %}{{ person.death_year }}{% else %}unknown{% endif %}">
+      <span class="lifespan-year">{{ person.birth_year or "?" }}</span>
+      <span class="lifespan-rule"></span>
+      <span class="lifespan-year">{{ person.death_year or "?" }}</span>
+    </div>
+    {% if place %}<p class="place">{{ place }}</p>{% endif %}
+  </header>
+
+  {# Everything a visitor most wants - portrait, vitals, family - sits in
+     one compact block above the fold, Ancestry/FamilySearch-style, rather
+     than making a reader scroll past a full timeline to reach it
+     (Will's feedback, 9 Oct 2026). The full Timeline below repeats the
+     vitals in chronological context, same as those sites do. #}
+  <section class="vitals-block wrap{{ '' if gallery and gallery[0].is_portrait else ' no-portrait' }}">
+    {% if gallery and gallery[0].is_portrait %}
+    <div class="vitals-col vitals-portrait">
+      <a class="hero-portrait gallery-photo" href="{{ root }}{{ gallery[0].full or gallery[0].thumbnail }}"
+         data-pswp-width="{{ gallery[0].full_width }}" data-pswp-height="{{ gallery[0].full_height }}"
+         target="_blank" rel="noopener"
+         data-caption="{{ gallery[0].caption or ('Portrait of ' ~ person.name.display) }}">
+        <img src="{{ root }}{{ gallery[0].thumbnail }}" alt="Portrait of {{ person.name.display }}" loading="eager">
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="vitals-col">
+      {% if relation_summary %}
+      <ul class="relation-summary">
+        {% for line in relation_summary %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if vitals %}
+      <dl class="vitals-list">
+        {% for v in vitals %}
+        <div class="vital-row">
+          <dt>{{ v.label }}</dt>
+          <dd>{{ v.date or "—" }}{% if v.place %} <span class="vital-place">{{ v.place }}</span>{% endif %}</dd>
+        </div>
+        {% endfor %}
+      </dl>
+      {% endif %}
+    </div>
+
+    {% if parents or spouses or children %}
+    <div class="vitals-col vitals-family">
+      <p class="vitals-col-label">Family</p>
+      <dl class="family-grid">
+        {% if parents %}
+        <div class="family-row"><dt>Parent{{ "s" if parents|length != 1 }}</dt><dd>
+          {% for p in parents %}{% if not loop.first %}<br>{% endif %}{% if p.hidden %}<span class="living">{{ p.label }}</span>{% else %}<a href="{{ root }}people/{{ p.slug }}/">{{ p.label }}</a>{% endif %}{% endfor %}
+        </dd></div>
+        {% endif %}
+        {% if spouses %}
+        <div class="family-row"><dt>Spouse{{ "s" if spouses|length != 1 }}</dt><dd>
+          {% for s in spouses %}{% if not loop.first %}<br>{% endif %}{% if s.hidden %}<span class="living">{{ s.label }}</span>{% else %}<a href="{{ root }}people/{{ s.slug }}/">{{ s.label }}</a>{% endif %}{% endfor %}
+        </dd></div>
+        {% endif %}
+        {% if children %}
+        <div class="family-row"><dt>{{ "Child" if children|length == 1 else (children|length ~ " Children") }}</dt><dd>
+          {% for c in children %}{% if not loop.first %}<br>{% endif %}{% if c.hidden %}<span class="living">{{ c.label }}</span>{% else %}<a href="{{ root }}people/{{ c.slug }}/">{{ c.label }}</a>{% endif %}{% endfor %}
+        </dd></div>
+        {% endif %}
+      </dl>
+    </div>
+    {% endif %}
+  </section>
+
+  {% if facts %}
+  <section class="register" aria-labelledby="events-h">
+    <h2 id="events-h">Timeline</h2>
+    <ol class="events">
+      {% for f in facts %}
+      <li class="event">
+        <span class="event-label">{{ f.label_display }}</span>
+        {% if f.place and f.place.text %}<span class="event-place">{{ f.place.text }}</span>{% endif %}
+        {% if f.citations %}
+        <span class="event-citecount">{{ f.citations|length }} source{{ "s" if f.citations|length != 1 }}</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {% if gallery %}
+  <section class="register" aria-labelledby="media-h">
+    <h2 id="media-h">Media</h2>
+    <div class="gallery" id="media-gallery">
+      {% for item in gallery %}
+        {% if item.type == "photo" %}
+        <a class="gallery-item gallery-photo" href="{{ root }}{{ item.full }}"
+           data-pswp-width="{{ item.full_width }}" data-pswp-height="{{ item.full_height }}"
+           data-cropped="true" target="_blank" rel="noopener"
+           data-caption="{{ item.caption or 'Photo' }}{% if item.date_text %} &middot; {{ item.date_text }}{% endif %}">
+          <img src="{{ root }}{{ item.thumbnail }}" alt="{{ item.caption or 'Photo' }}" loading="{{ 'eager' if item.is_portrait else 'lazy' }}">
+        </a>
+        {% else %}
+        <a class="gallery-item gallery-document" href="#"
+           data-pages='{{ item.pages|tojson }}'
+           data-caption="{{ item.caption or 'Document' }}{% if item.date_text %} &middot; {{ item.date_text }}{% endif %}">
+          <img src="{{ root }}{{ item.thumbnail }}" alt="{{ item.caption or 'Document' }}" loading="lazy">
+          <span class="doc-badge">Document{% if item.page_count > 1 %} &middot; {{ item.page_count }} pages{% endif %}</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if record_sources or other_sources %}
+  <section class="register" aria-labelledby="sources-h">
+    <h2 id="sources-h">Sources</h2>
+    {% for group in record_sources %}
+    <details class="source-group" open>
+      <summary>{{ group.source.title }}{% if group.source.author %}<span class="source-author"> &mdash; {{ group.source.author }}</span>{% endif %}</summary>
+      <ul class="citations">
+        {% for c in group.citations %}
+        <li>
+          {% for m in c.media_items %}
+            {% if m.type == "photo" %}
+            <a class="citation-thumb gallery-photo" href="{{ root }}{{ m.full or m.thumbnail }}"
+               data-pswp-width="{{ m.full_width }}" data-pswp-height="{{ m.full_height }}"
+               target="_blank" rel="noopener"
+               data-caption="{{ m.caption or group.source.title }}">
+              <img src="{{ root }}{{ m.thumbnail }}" alt="{{ m.caption or 'Source image' }}" loading="lazy">
+            </a>
+            {% else %}
+            <a class="citation-thumb gallery-document" href="#"
+               data-pages='{{ m.pages|tojson }}'
+               data-caption="{{ m.caption or group.source.title }}">
+              <img src="{{ root }}{{ m.thumbnail }}" alt="{{ m.caption or 'Source image' }}" loading="lazy">
+            </a>
+            {% endif %}
+          {% endfor %}
+          <span class="citation-fact">{{ c.fact_label }}</span>
+          {% if c.page %}<span class="citation-page">{{ c.page }}</span>{% endif %}
+          {% if c.link %}<a class="citation-link" href="{{ c.link }}" rel="noreferrer">source link</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endfor %}
+
+    {% if other_sources %}
+    <details class="source-group other-researchers">
+      <summary>Other researchers' trees <span class="source-caveat">(not original records)</span></summary>
+      {% for group in other_sources %}
+      <p class="source-group-title">{{ group.source.title }}</p>
+      <ul class="citations">
+        {% for c in group.citations %}
+        <li><span class="citation-fact">{{ c.fact_label }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </details>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="contact-cta wrap">
+    <p>Related to {{ person.name.given.split(" ")[0] if person.name.given else person.name.display }}?
+      I'd love to hear from you.</p>
+    <a class="button contact-link" href="#"
+       data-user="{{ site.contact_email.split('@')[0] }}"
+       data-domain="{{ site.contact_email.split('@')[1] }}"
+       data-subject="Re: {{ person.name.display }}">Get in touch</a>
+    <noscript><p class="obfuscated-email">{{ site.contact_email.split('@')[0] }} [at] {{ site.contact_email.split('@')[1] }}</p></noscript>
+  </section>
+</article>
+
+<dialog id="document-viewer" aria-label="Document viewer" data-icons-prefix="{{ root }}static/vendor/openseadragon/images/">
+  <div class="viewer-chrome">
+    <p class="viewer-caption"></p>
+    <button type="button" class="viewer-close" aria-label="Close">&times;</button>
+  </div>
+  <div id="osd-container"></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ root }}static/vendor/openseadragon/openseadragon.min.js" defer></script>
+<script type="module" src="{{ root }}static/js/gallery.js"></script>
+{% endblock %}

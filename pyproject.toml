@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gedcomwright"
+version = "0.1.0"
+description = "FTM -> GEDCOM -> static family-tree website generator"
+requires-python = ">=3.12"
+
+[project.scripts]
+gedcomwright = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = ["pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

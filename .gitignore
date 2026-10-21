@@ -1,0 +1,38 @@
+# --- Inputs: NEVER commit. GEDCOMs and FTM files contain living people's details ---
+*.ged
+*.GED
+*.ftm
+*.ftmb
+input/
+idtest/
+# the synthetic test fixture IS committed
+!tests/fixtures/*.ged
+
+# --- Build output and reports (reports name living people) ---
+build/
+reports/
+*not published*.md
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# --- Local tool settings and secrets ---
+# your own config; config.example.yaml is the committed template
+config.yaml
+.claude/settings.local.json
+.env
+*.ppk
+*.pem
+winscp*.ini
+
+# --- OS / editor ---
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/

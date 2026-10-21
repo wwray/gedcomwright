@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# Blocking (not deferred) and placed before any stylesheet: must run
+   before first paint, or a saved dark-mode choice flashes light first.
+   Only ever reads localStorage; static/js/theme.js owns writing to it. #}
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+<title>{% block title %}{{ site.title }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{% endblock %}">
+{% block canonical %}{% endblock %}
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%233c5a48'/%3E%3Crect x='42' y='26' width='16' height='48' fill='%23f2f0e8' transform='rotate(45 50 50)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ root }}static/fonts.css">
+<link rel="stylesheet" href="{{ root }}static/vendor/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="{{ root }}static/css/site.css">
+{# Pagefind's own output (build/site/pagefind/) - self-hosted, written by
+   `gedcomwright render`'s final step, not a CDN. Site-wide, since the
+   search modal is reachable from every page's header. #}
+<link rel="stylesheet" href="{{ root }}pagefind/pagefind-component-ui.css">
+<script src="{{ root }}pagefind/pagefind-component-ui.js" type="module"></script>
+{# Bundle-path auto-detection can't handle our root-relative script src on
+   nested pages (falls back to the wrong "/pagefind/" default) - this makes
+   it explicit instead. Must be absolute (site.base_path, not {{ root }}) -
+   see _site_context()'s comment in render.py. Placed right after the
+   component script/style tags, before any <pagefind-*> element is used
+   further down, per Pagefind's own docs. #}
+<pagefind-config bundle-path="{{ site.base_path }}/pagefind/"></pagefind-config>
+{% block schema %}{% endblock %}
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-mark" href="{{ root }}">{{ site.title }}</a>
+    <nav aria-label="Primary">
+      <a href="{{ root }}surnames/">Surnames</a>
+      <a href="{{ root }}about/">About</a>
+      <button type="button" class="theme-toggle" aria-label="Switch between light and dark" aria-pressed="false">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path>
+        </svg>
+      </button>
+      <pagefind-modal-trigger compact></pagefind-modal-trigger>
+    </nav>
+  </div>
+</header>
+<pagefind-modal reset-on-close></pagefind-modal>
+<main id="main" data-pagefind-body>
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      {{ site.title }}. Related to someone on this page?
+      <a class="contact-link" href="#"
+         data-user="{{ site.contact_email.split('@')[0] }}"
+         data-domain="{{ site.contact_email.split('@')[1] }}"
+         data-subject="Family history enquiry">I'd love to hear from you</a>.
+      <noscript> (<span class="obfuscated-email">{{ site.contact_email.split('@')[0] }} [at] {{ site.contact_email.split('@')[1] }}</span>)</noscript>
+      {% if site.contact_is_placeholder %}
+      <span class="placeholder-flag">(placeholder address - config.yaml's
+      site.contact_email still needs a real one)</span>
+      {% endif %}
+    </p>
+    <p class="site-credit">Powered by gedcomwright</p>
+  </div>
+</footer>
+<script src="{{ root }}static/js/contact.js" defer></script>
+<script src="{{ root }}static/js/theme.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

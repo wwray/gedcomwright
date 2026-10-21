@@ -1,0 +1,135 @@
+0 HEAD
+1 SOUR GEDCOMWRIGHT_TEST
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+1 DATE 5 OCT 2026
+1 SUBM @SUBM@
+0 @SUBM@ SUBM
+1 NAME Test Fixture
+0 @I1@ INDI
+1 NAME William /Testwright/
+1 SEX M
+1 FAMC @F1@
+1 FAMS @F10@
+0 @I2@ INDI
+1 NAME Robert /Testwright/
+1 SEX M
+1 DEAT Y
+2 DATE 12 MAR 1995
+2 SOUR @S1@
+3 PAGE Death register, page 12
+1 OBJE @M1@
+1 BIRT Y
+2 SOUR @S2@
+3 OBJE @M2@
+1 FAMC @F2@
+1 FAMS @F1@
+1 _PHOTO @M1@
+1 NOTE This note is deliberately long enough to exceed GEDCOM's 255-character per-line limit, written on one single line with no CONC/CONT continuation at all, to prove the parser never enforces or truncates at that boundary no matter how the text arrives, even past this point.
+0 @I3@ INDI
+1 NAME Margaret /Testwright/
+1 SEX F
+1 FAMS @F1@
+0 @I4@ INDI
+1 NAME Susan /Spouseton/
+1 SEX F
+1 FAMS @F10@
+0 @I5@ INDI
+1 NAME Baby /Testwright/
+1 SEX F
+1 FAMC @F10@
+1 BIRT Y
+2 DATE AFT 2015
+1 OBJE @M1@
+0 @I6@ INDI
+1 NAME George /Testwright/
+1 SEX M
+1 FAMS @F2@
+0 @I7@ INDI
+1 NAME Alice /Testwright/
+1 SEX F
+1 FAMS @F2@
+1 DEAT Y
+2 DATE ABT 1960
+1 OBJE @M3@
+1 OBJE @M4@
+1 OBJE @M5@
+0 @I8@ INDI
+1 NAME Henry /Collateral/
+1 SEX M
+1 BIRT Y
+2 DATE 1870
+0 @I9@ INDI
+1 NAME Edith /Unconnected/
+1 SEX F
+1 DEAT Y
+2 DATE 1944
+0 @I10@ INDI
+1 NAME Frank /AlsoUnconnected/
+1 SEX M
+0 @I13@ INDI
+1 NAME Adopted /Testwright/
+1 SEX M
+1 FAMC @F10@
+0 @I14@ INDI
+1 NAME Ellen //
+1 SEX F
+1 DEAT Y
+2 DATE pre 1870
+0 @I15@ INDI
+1 NAME Hidden /ByOverride/
+1 SEX M
+1 RESN confidential
+1 DEAT Y
+2 DATE 1980
+0 @F1@ FAM
+1 HUSB @I2@
+1 WIFE @I3@
+1 CHIL @I1@
+2 _FREL Natural
+2 _MREL Natural
+0 @F2@ FAM
+1 HUSB @I6@
+1 WIFE @I7@
+1 CHIL @I2@
+2 _FREL Natural
+2 _MREL Natural
+0 @F10@ FAM
+1 HUSB @I1@
+1 WIFE @I4@
+1 CHIL @I5@
+2 _FREL Natural
+2 _MREL Natural
+1 CHIL @I13@
+2 _FREL Adopted
+2 _MREL Adopted
+0 @S1@ SOUR
+1 TITL Ancestry Family Trees
+1 AUTH Ancestry.com
+0 @S2@ SOUR
+1 TITL Testshire Parish Registers
+1 AUTH Test Record Office
+1 NOTE <p>A source note with <i>allowed</i> <a href="https://example.com">markup</a>, plus a <script>alert(1)</script> tag and a <div>disallowed wrapper</div> that should still keep its text.</p>
+0 @M1@ OBJE
+1 FILE C:\fixtures\media\family-photo.jpg
+2 FORM jpg
+2 TITL Family photo
+0 @M2@ OBJE
+1 FILE C:\fixtures\media\1881 census of testshire(3).jpg
+2 FORM jpg
+2 TITL 1881 census of testshire
+0 @M3@ OBJE
+1 FILE C:\fixtures\media\sample-cmyk.tif
+2 FORM tif
+2 TITL Synthetic CMYK TIFF (placeholder - Milestone 2 adds the real binary fixture)
+0 @M4@ OBJE
+1 FILE C:\fixtures\media\sample-16bit.tif
+2 FORM tif
+2 TITL Synthetic 16-bit TIFF (placeholder - Milestone 2 adds the real binary fixture)
+0 @M5@ OBJE
+1 FILE C:\fixtures\media\sample-multipage.tif
+2 FORM tif
+2 TITL Synthetic multi-page TIFF (placeholder - Milestone 2 adds the real binary fixture)
+0 TRLR

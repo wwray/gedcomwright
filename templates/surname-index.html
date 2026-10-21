@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo.title }}{% endblock %}
+{% block description %}{{ seo.description }}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endblock %}
+
+{% block content %}
+<article class="listing-page wrap">
+  <header class="page-hero">
+    <p class="eyebrow">Browse</p>
+    <h1>Surnames</h1>
+    <p class="page-intro">{{ groups|length }} surnames &middot;
+      {{ groups|sum(attribute="count") }} people</p>
+  </header>
+
+  <ul class="surname-list">
+    {% for g in groups %}
+    <li>
+      <a href="{{ root }}surnames/{{ g.key }}/">{{ g.label }}</a>
+      <span class="surname-count">{{ g.count }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</article>
+{% endblock %}
