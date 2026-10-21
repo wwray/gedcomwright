@@ -175,6 +175,7 @@ details > summary { cursor: pointer; }
   font-size: 0.78rem;
   color: var(--ink-soft);
 }
+.site-credit a { color: inherit; }
 
 /* ---------- hero ----------
    Kept deliberately short (Will's feedback, 9 Oct 2026: "more info above

@@ -31,6 +31,10 @@ config.yaml
 *.pem
 winscp*.ini
 
+# --- Private working notes: name family members, local paths, the server ---
+CLAUDE.md
+private/
+
 # --- OS / editor ---
 Thumbs.db
 desktop.ini
