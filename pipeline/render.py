@@ -8,6 +8,7 @@ import json
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -539,14 +540,17 @@ def render_all_person_pages(config: "Config") -> dict:
     sources = json.loads((data_dir / "sources.json").read_text(encoding="utf-8"))
     media = json.loads((data_dir / "media.json").read_text(encoding="utf-8"))
     written: list[Path] = []
+    rendered_ids: list[str] = []
     errors: list[tuple[str, str]] = []
     for p in people:
         try:
             written.append(render_person_page(
                 p["id"], config, people=people, sources=sources, media=media))
+            rendered_ids.append(p["id"])
         except Exception as e:  # noqa: BLE001 - deliberately broad; see docstring
             errors.append((p["id"], f"{type(e).__name__}: {e}"))
-    return {"total": len(people), "written": len(written), "errors": errors}
+    return {"total": len(people), "written": len(written), "errors": errors,
+            "rendered_ids": rendered_ids}
 
 
 # --- surname index -----------------------------------------------------
@@ -722,6 +726,57 @@ def build_search_index(config: "Config") -> dict:
     return {"pagefind_output": result.stdout}
 
 
+# --- sitemap -----------------------------------------------------------
+
+SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
+SITEMAP_MAX_URLS = 50_000  # sitemaps.org protocol limit per file
+
+
+def sitemap_urls(config: "Config", people: list[dict], rendered_ids: set[str]) -> list[str]:
+    """BRIEF.md Stage 3: "Canonical URLs, sitemap.xml and robots.txt."
+    Every URL is built with exactly the same `https://{domain}{base_path}`
+    prefix the pages use for their own <link rel="canonical">, so the two
+    can't disagree. Derived from this build's people.json (published people
+    only - extract never writes a hidden person there) plus the ids whose
+    page actually rendered this run, never by walking build/site/: a page
+    left over from an earlier build, or one that failed to render this
+    time, stays out. The 404 page, static/, media/ and pagefind/ are never
+    listed. No <lastmod>: nothing in the GEDCOM or the build records when a
+    page's content actually last changed, and the build time isn't that.
+    Order is fixed (home, about, surname index, then surnames and people
+    by slug) so an unchanged tree gives a byte-identical file."""
+    url_prefix = f"https://{config.site_domain}{config.site_base_path}".rstrip("/")
+    urls = [f"{url_prefix}/", f"{url_prefix}/about/", f"{url_prefix}/surnames/"]
+    urls += [f"{url_prefix}/surnames/{key}/"
+             for key in sorted(g["key"] for g in surname_groups(people))]
+    urls += [f"{url_prefix}/people/{slug}/"
+             for slug in sorted(p["slug"] for p in people if p["id"] in rendered_ids)]
+    return urls
+
+
+def write_sitemap(config: "Config", rendered_ids: set[str]) -> int | None:
+    """Writes build/site/sitemap.xml and returns its URL count. Skipped
+    (returning None, and removing any sitemap.xml left by an earlier build)
+    when site.domain is empty, since a sitemap's URLs must be absolute."""
+    out_path = config.site_dir / "sitemap.xml"
+    if not config.site_domain:
+        out_path.unlink(missing_ok=True)
+        return None
+    people = json.loads((config.data_dir / "people.json").read_text(encoding="utf-8"))
+    urls = sitemap_urls(config, people, rendered_ids)
+    if len(urls) > SITEMAP_MAX_URLS:
+        raise RuntimeError(f"sitemap has {len(urls)} URLs, over the protocol's "
+                            f"{SITEMAP_MAX_URLS} limit for one file")
+    urlset = ET.Element("urlset", xmlns=SITEMAP_NS)
+    for url in urls:
+        ET.SubElement(ET.SubElement(urlset, "url"), "loc").text = url
+    ET.indent(urlset)
+    xml = ET.tostring(urlset, encoding="utf-8", xml_declaration=True) + b"\n"
+    config.site_dir.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(xml)
+    return len(urls)
+
+
 def render_site(config: "Config") -> dict:
     """Runs every render sub-stage and copies static assets once at the
     end (not per-page - copy_static wipes and recopies the whole static/
@@ -733,9 +788,11 @@ def render_site(config: "Config") -> dict:
     render_home_page(config)
     render_about_page(config)
     render_404_page(config)
+    sitemap_count = write_sitemap(config, set(person_summary["rendered_ids"]))
     copy_static(config)
     search_summary = build_search_index(config)
-    return {**person_summary, **surname_summary, **search_summary}
+    return {**person_summary, **surname_summary, **search_summary,
+            "sitemap_urls": sitemap_count}
 
 
 def render_preview_html(person_id: str, config: "Config") -> tuple[str, dict]:

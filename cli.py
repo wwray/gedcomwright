@@ -133,6 +133,10 @@ def _cmd_render(args: argparse.Namespace) -> int:
     print(f"rendered {summary['written']} of {summary['total']} person pages")
     print(f"rendered {summary['surnames']} surname pages")
     print("wrote home, about and 404 pages")
+    if summary["sitemap_urls"] is None:
+        print("skipped sitemap.xml (site.domain is not set)")
+    else:
+        print(f"wrote {config.site_dir / 'sitemap.xml'} ({summary['sitemap_urls']} URLs)")
     print("built search index (build/site/pagefind/)")
     if summary["errors"]:
         print(f"errors: {len(summary['errors'])}", file=sys.stderr)

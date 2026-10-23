@@ -157,7 +157,8 @@ media output.
 
 ```powershell
 gedcomwright render                     # the whole site: every published person,
-                                         # surname index, home, about, 404, search
+                                         # surname index, home, about, 404,
+                                         # sitemap.xml, search
 gedcomwright render --person I1045      # one page only (design-review workflow)
 ```
 
@@ -186,6 +187,20 @@ a design proposal before applying it across the site", then applied everywhere:
   in plain terms, plus contact.
 - **404** (`404.html`, un-nested - the conventional path a webserver error-document
   directive expects; wiring Apache to actually serve it is a Stage 5 detail).
+- **Sitemap** (`build/site/sitemap.xml`, rewritten on every full `render`; not by
+  `render --person`) - a standard sitemaps.org `<urlset>` with absolute URLs
+  built from `site.domain` + `site.base_path`, exactly matching each page's own
+  `<link rel="canonical">`. Lists home, about, the surname index, every surname
+  page, and every person page that rendered successfully in this run. Built from
+  this build's `people.json` (published people only), never by scanning the
+  output folder, so a page left over from an earlier build - or a person since
+  hidden or removed - never gets listed. The 404 page, `static/`, `media/` and
+  `pagefind/` are never included. No `<lastmod>`: nothing in the GEDCOM records
+  when a page's content really changed, and the build time would be misleading.
+  Fixed ordering, so an unchanged tree gives a byte-identical file. Skipped (and
+  any old one removed) if `site.domain` is empty, since sitemap URLs must be
+  absolute. With a base path the file is served at e.g.
+  `https://example.com/family/sitemap.xml`.
 - **Search**: **Pagefind 1.5.2** (MIT), run as the final build step over the already-
   rendered HTML. Uses the new **Component UI** (`<pagefind-modal-trigger>`/
   `<pagefind-modal>` in the header, `<pagefind-searchbox>` on the home page) -
@@ -447,7 +462,7 @@ Found and fixed while Will reviewed the manually-copied first build:
 pytest
 ```
 
-263 tests, all passing: date parsing (every qualifier, boundary years,
+273 tests, all passing: date parsing (every qualifier, boundary years,
 every non-conforming shape found in the real export), the GEDCOM parser
 (CONC/CONT, cross-references, over-long lines, header encoding), slug
 stability, the full privacy classifier (every group and its precedence,
@@ -461,7 +476,12 @@ grouping including the case/punctuation-collision merge, vital-facts
 selection, relation-summary wording, citation-media resolution, and an
 end-to-end `render_site()` run through the synthetic fixture checking
 every page type gets written, the HTML stays well-formed, and a hidden
-person never gets a page under any name), the audit pipeline (each of the
+person never gets a page under any name), the sitemap (its URLs match every
+rendered page's canonical tag exactly, with and without a base path; hidden
+people, the 404 page, assets, search files, stale pages left in the output
+folder and failed person pages are all excluded; people added to or removed
+from the published set show up or drop out on the next render; rebuilds are
+byte-identical; no domain means no sitemap), the audit pipeline (each of the
 six Stage 4 checks individually, including a prefix-overlap false-positive
 guard for the hidden-id scan and the PDF-entry edge case with no top-level
 thumbnail, plus an end-to-end run confirming the real pipeline's own
@@ -551,6 +571,10 @@ OBJE/NOTE/PLAC tags. None of that cares which program wrote the file.
 - The 404 page is generated (`build/site/404.html`) but not wired to
   anything - making Apache actually serve it on a 404 is a Stage 5
   (publish) server-config detail, not done here.
+- `robots.txt` (also in BRIEF.md's Stage 3 list) isn't generated yet, so
+  nothing points crawlers at `sitemap.xml` - and with a base path, a
+  `robots.txt` would have to live at the domain root, outside this site's
+  own folder. Submitting the sitemap to Search Console is likewise not done.
 - Pagefind's `--pf-primary` CSS variable (used to theme the search modal's
   accent colour) is a reasonable guess, not confirmed against Pagefind's
   full variable list - harmless if wrong (unrecognized custom properties
