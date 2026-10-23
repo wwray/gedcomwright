@@ -549,8 +549,21 @@ def render_all_person_pages(config: "Config") -> dict:
             rendered_ids.append(p["id"])
         except Exception as e:  # noqa: BLE001 - deliberately broad; see docstring
             errors.append((p["id"], f"{type(e).__name__}: {e}"))
+    _prune_stale_dirs(config.site_dir / "people", {path.parent.name for path in written})
     return {"total": len(people), "written": len(written), "errors": errors,
             "rendered_ids": rendered_ids}
+
+
+def _prune_stale_dirs(parent: Path, keep: set[str]) -> None:
+    """Removes page directories an earlier build left behind - a person
+    removed from the tree, newly hidden, renamed (new slug), or whose page
+    failed to render this run - so they can't be uploaded with the site.
+    Only ever called after a full render of that page type."""
+    if not parent.exists():
+        return
+    for d in parent.iterdir():
+        if d.is_dir() and d.name not in keep:
+            shutil.rmtree(d)
 
 
 # --- surname index -----------------------------------------------------
@@ -616,6 +629,7 @@ def render_surname_pages(config: "Config") -> dict:
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "index.html").write_text(html, encoding="utf-8")
 
+    _prune_stale_dirs(index_dir, {g["key"] for g in groups})
     return {"surnames": len(groups)}
 
 

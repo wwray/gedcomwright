@@ -649,3 +649,26 @@ def test_hidden_people_never_get_a_page(built_config):
     people_dir = built_config.site_dir / "people"
     slugs = [p.name for p in people_dir.iterdir() if p.is_dir()]
     assert not any(slug == "I1" or slug.endswith("-I1") for slug in slugs)
+
+
+def test_full_render_removes_pages_left_by_an_earlier_build(built_config):
+    """A person removed from the tree (or newly hidden, or renamed) must not
+    keep their old page in build/site/, or it would be uploaded with the
+    rest - same for a surname nobody has any more."""
+    render.render_site(built_config)
+    people = json.loads((built_config.data_dir / "people.json").read_text(encoding="utf-8"))
+    removed = people[0]
+    old_person = built_config.site_dir / "people" / "old-person-I999"
+    old_surname = built_config.site_dir / "surnames" / "oldsurname"
+    for d in (old_person, old_surname):
+        d.mkdir(parents=True)
+        (d / "index.html").write_text("<p>left over</p>", encoding="utf-8")
+
+    (built_config.data_dir / "people.json").write_text(json.dumps(people[1:]), encoding="utf-8")
+    render.render_site(built_config)
+
+    people_dir = built_config.site_dir / "people"
+    assert not old_person.exists() and not old_surname.exists()
+    assert not (people_dir / removed["slug"]).exists()
+    assert {d.name for d in people_dir.iterdir()} == {p["slug"] for p in people[1:]}
+    assert (built_config.site_dir / "surnames" / "index.html").exists()
